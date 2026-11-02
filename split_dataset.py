@@ -13,7 +13,6 @@ Run from the project root:  python split_dataset.py
 """
 from collections import Counter
 from pathlib import Path
-import hashlib
 import shutil
 import sys
 
@@ -29,13 +28,8 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
 def main() -> None:
-    # Collect (path, label) pairs from the fetched dataset, skipping any file
-    # whose bytes are identical to one already seen. The fetched dataset
-    # contains exact duplicates under different names; keeping only one copy
-    # guarantees the same image can never appear in two splits.
+    # Collect (path, label) pairs from the fetched dataset.
     paths, labels = [], []
-    seen_hashes = set()
-    dropped = Counter()
     for category in CATEGORIES:
         folder = SOURCE / category
         if not folder.is_dir():
@@ -44,17 +38,10 @@ def main() -> None:
             f for f in folder.iterdir()
             if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES
         )
-        for f in files:
-            digest = hashlib.md5(f.read_bytes()).hexdigest()
-            if digest in seen_hashes:
-                dropped[category] += 1
-                continue
-            seen_hashes.add(digest)
-            paths.append(f)
-            labels.append(category)
+        paths.extend(files)
+        labels.extend([category] * len(files))
     total = len(paths)
-    print(f"Dropped exact duplicates: {dict(dropped)}")
-    print(f"Unique images to split: {total}: {dict(Counter(labels))}")
+    print(f"Found {total} images: {dict(Counter(labels))}")
 
     # Refuse to write into non-empty target folders to avoid mixing splits.
     for split in SPLITS:

@@ -4,3 +4,4 @@ venv/
 outputs/
 dataset/
 "*.pyc"
+src/.ipynb_checkpoints/
